@@ -1,0 +1,18 @@
+---
+- hosts: cluster
+  remote_user: ss
+
+  tasks:
+  - name: install basic configuration
+    apt:
+      name: [
+      'apt-transport-https'
+      , 'wget'
+      , 'gnupg2'
+      , 'dirmngr'
+      , 'gnupg'
+      , 'htop']
+      state: present
+    become: yes
+    become_method: su
+    become_user: root

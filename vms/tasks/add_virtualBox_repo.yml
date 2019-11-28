@@ -1,0 +1,21 @@
+- name: add key for virtualbox repo
+  apt_key:
+    url: https://www.virtualbox.org/download/oracle_vbox_2016.asc
+    state: present
+  become: yes
+  become_method: su
+  become_user: root
+
+- name: add key for virtualbox repo
+  apt_key:
+    url: https://www.virtualbox.org/download/oracle_vbox.asc
+    state: present
+  become: yes
+  become_method: su
+  become_user: root
+
+- name: add virtualbox repo 
+  apt_repository: repo='deb https://download.virtualbox.org/virtualbox/debian buster contrib'
+  become: yes
+  become_method: su
+  become_user: root

@@ -1,0 +1,12 @@
+---
+- hosts: cluster
+  remote_user: ss
+
+  tasks:
+  - name: install basic configuration
+    action: apt pkg={{ item }} state=installed
+    with_items:
+      - htop
+    become: yes
+    become_method: su
+    become_user: root

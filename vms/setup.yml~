@@ -1,0 +1,32 @@
+---
+- hosts: nodosVMs
+  remote_user: ss
+
+  tasks:
+  - name: import taskt to add virtualbox repo
+    import_tasks: ./tasks/add_virtualBox_repo.yml
+
+  - name: apt-get update
+    apt:
+      update_cache: yes
+    become: yes
+    become_method: su
+    become_user: root
+
+  - name: install basic configuration
+    apt:
+      name: ['virtualbox-5.2', 'vagrant', 'python3-pip']
+      state: installed
+    become: yes
+    become_method: su
+    become_user: root
+
+  - name: add rights to user ss
+    shell: gpasswd -a ss vboxusers
+    become: yes
+    become_method: su
+    become_user: root
+
+  - name: import taskt to add virtualbox repo
+    import_tasks: ./tasks/vagrant_configuration.yml
+    

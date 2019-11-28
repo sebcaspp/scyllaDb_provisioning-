@@ -1,0 +1,27 @@
+- name: creates vagrant files directory
+  file:
+    path: /home/ss/vagrant_files
+    state: directory
+
+- name: download vagrant box
+  command: vagrant box add generic/debian8 --provider virtualbox --clean --force 
+  tags:
+  - prereq
+  
+- name: copy vagrant file
+  copy:
+    src: ./tasks/vagrant_files/Vagrantfile
+    dest: /home/ss/vagrant_files
+    force: yes
+
+- name: copy scilla db ansible inventory
+  copy:
+    src: ./tasks/vagrant_files/scyllaDB_inventory
+    dest: /home/ss/vagrant_files
+    force: yes
+
+- name: copy scilla db ansible playbook
+  copy:
+    src: ./tasks/vagrant_files/scyllaDB_install.yml 
+    dest: /home/ss/vagrant_files
+    force: yes
