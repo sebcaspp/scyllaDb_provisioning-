@@ -1,0 +1,4 @@
+
+
+# to list the tokens
+kubeadm token list

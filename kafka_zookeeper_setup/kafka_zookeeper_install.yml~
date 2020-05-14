@@ -1,0 +1,145 @@
+---
+- hosts: brokers
+  remote_user: ss
+  become: yes
+  become_method: su
+  become_user: root
+  vars:
+    kafka_port: 9091
+    zookeeper_port: 2181
+
+  tasks:
+  - name: Install add-apt-repository command utility on Debian
+    package: name=software-properties-common state=present
+
+  - name: install basic configuration
+    apt:
+      name: [
+      'apt-transport-https'
+      , 'wget'
+      , 'gnupg2'
+      , 'dirmngr'
+      , 'gnupg'
+      , 'htop'
+      , 'collectd'
+      ]
+      state: present
+    
+  - name: add key for java
+    apt_key:
+      keyserver: keyserver.ubuntu.com
+      id: EA8CACC073C3DB2A
+      state: present
+    
+  - name: add repo to install java
+    apt_repository: repo='deb http://ppa.launchpad.net/linuxuprising/java/ubuntu bionic main'
+
+  - name: update cache 
+    apt: update_cache=yes
+
+  - name: Install java 8
+    apt: name=openjdk-8-jdk state=present allow_unauthenticated=yes
+
+  - name: download kafka
+    get_url:
+      url: https://downloads.apache.org/kafka/2.5.0/kafka_2.12-2.5.0.tgz 
+      dest: /tmp/
+
+  - name: extract kafka_2.12-2.5.0.tgz into /home/vagrant/
+    unarchive:
+      src: /tmp/kafka_2.12-2.5.0.tgz
+      dest: /tmp/
+      remote_src: yes
+
+  - name: delete kafka bin dir
+    command: rm -rf /opt/kafka
+
+  - name: copy kafa bin to /opt/kafka
+    command: mv /tmp/kafka_2.12-2.5.0 /opt/kafka
+
+  - name: download zookeeper
+    get_url:
+      url: https://archive.apache.org/dist/zookeeper/zookeeper-3.6.1/apache-zookeeper-3.6.1-bin.tar.gz
+      dest: /tmp/
+
+  - name: extract apache-zookeeper-3.6.1.tar.gz into /home/vagrant/
+    unarchive:
+      src: /tmp/apache-zookeeper-3.6.1-bin.tar.gz
+      dest: /tmp
+      remote_src: yes
+
+  - name: delete zookeeper bin dir
+    command: rm -rf /opt/zookeeper
+    
+  - name: copy zookeeper bin dir
+    command: mv /tmp/apache-zookeeper-3.6.1-bin /opt/zookeeper
+
+  - name: creates zookeeper dir data
+    file:
+      path: /var/lib/zookeeper
+      state: directory
+
+  - name: copy zookeeper config file
+    copy:
+      src: ./zoo.cfg
+      dest: /opt/zookeeper/conf
+      force: yes
+
+  - name: genarate zookeeper file id
+    copy:
+      content: "{% for thishost in play_hosts %}{% if inventory_hostname==thishost %}{{ loop.index }}{% endif %}{% endfor %}"
+      dest: /var/lib/zookeeper/myid
+
+  - name: copy zookeeper.service to configure systemd
+    copy:
+      src: ./zookeeper.service
+      dest: /etc/systemd/system/
+      force: yes
+
+  - name: creates kafka dir data
+    file:
+      path: /var/lib/kafka
+      state: directory
+
+  - name: copy kafka.service to configure systemd
+    copy:
+      src: ./kafka.service
+      dest: /etc/systemd/system/
+      force: yes
+   
+  - name: change broker id
+    replace:
+      path: /opt/kafka/config/server.properties
+      regexp: '.*(broker.id=).*'
+      replace: '\1 {% for thishost in play_hosts %}{% if inventory_hostname==thishost %}{{ loop.index }}{% endif %}{% endfor %}'
+
+  - name: uncomment listeners
+    replace:
+      path: /opt/kafka/config/server.properties
+      regexp: '#(listeners=PLAINTEXT://).*'
+      replace: '\1localhost:{{ kafka_port }}'
+
+  - name: set kafka logs dir
+    replace:
+      path: /opt/kafka/config/server.properties
+      regexp: '.*(log.dirs=).*'
+      replace: '\1 /var/lib/kafka/'
+
+  - name: set zookeeper addres to kafka 
+    replace:
+      path: /opt/kafka/config/server.properties
+      regexp: '.*(zookeeper.connect=).*'
+      replace: '\1 n1.cluster:{{ zookeeper_port }},n2.cluster:{{ zookeeper_port }},n3.cluster:{{ zookeeper_port }}'
+
+  - name: reload daemons
+    shell: systemctl daemon-reload
+
+  - name: start zookeeper service
+    shell: systemctl start zookeeper.service
+
+  - name: start kafka service
+    shell: systemctl start kafka.service
+
+
+
+

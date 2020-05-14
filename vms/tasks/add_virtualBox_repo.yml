@@ -15,7 +15,7 @@
   become_user: root
 
 - name: add virtualbox repo 
-  apt_repository: repo='deb https://download.virtualbox.org/virtualbox/debian buster contrib'
+  apt_repository: repo='deb http://download.virtualbox.org/virtualbox/debian stretch contrib'
   become: yes
   become_method: su
   become_user: root

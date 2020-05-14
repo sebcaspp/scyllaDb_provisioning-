@@ -1,5 +1,5 @@
 ---
-- hosts: nodosVMs
+- hosts: server1
   remote_user: ss
 
   tasks:
@@ -15,7 +15,7 @@
 
   - name: install basic configuration
     apt:
-      name: ['virtualbox-5.2', 'vagrant', 'python3-pip']
+      name: ['virtualbox-5.2', 'vagrant', 'ansible', 'python3-pip', 'linux-headers-{{ ansible_kernel }}']
       state: present
     become: yes
     become_method: su

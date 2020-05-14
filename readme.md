@@ -9,7 +9,7 @@ TODO:
 Run ansible
 ===========
 
-ansible-playbook --ask-become-pass setup.yml --verbose --skip-tags "prereq"
+ansible-playbook --ask-pass --ask-become-pass setup.yml --verbose --skip-tags "prereq"
 
 
 

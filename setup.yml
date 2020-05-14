@@ -1,18 +1,35 @@
 ---
 - hosts: cluster
   remote_user: ss
+  become: yes
+  become_method: su
+  become_user: root
 
   tasks:
+  - name: comment cdroom source
+    replace:
+      path: /etc/apt/sources.list
+      regexp: '^(deb cdrom:.*)'
+      replace: '# \1'
+  
+  - name: insert repo
+    lineinfile:
+      path: /etc/apt/sources.list
+      line: 'deb http://debian.unnoba.edu.ar/debian/ stretch main'
+      insertbefore: BOF
+      state: present
+
   - name: install basic configuration
     apt:
       name: [
-      'apt-transport-https'
+       'apt-transport-https'
+      , 'net-tools' 
       , 'wget'
       , 'gnupg2'
       , 'dirmngr'
       , 'gnupg'
       , 'htop']
       state: present
-    become: yes
-    become_method: su
-    become_user: root
+    
+
+    

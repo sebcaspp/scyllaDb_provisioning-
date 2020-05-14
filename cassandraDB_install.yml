@@ -1,0 +1,99 @@
+---
+- hosts: bds
+  remote_user: ss
+  become: yes
+  become_method: su
+  become_user: root
+  vars:
+    cluster_name: cluster_test
+    seeds: "bd1.cluster, bd2.cluster, bd3.cluster"
+
+  tasks:
+  - name: Install add-apt-repository command utility on Debian
+    package: name=software-properties-common state=present
+
+  - name: install basic configuration
+    apt:
+      name: [
+      'apt-transport-https'
+      , 'wget'
+      , 'gnupg2'
+      , 'dirmngr'
+      , 'gnupg'
+      , 'htop'
+      , 'collectd'
+      , 'net-tools'
+      ]
+      state: present
+    
+  - name: add key for java
+    apt_key:
+      keyserver: keyserver.ubuntu.com
+      id: EA8CACC073C3DB2A
+      state: present
+    
+  - name: add repo to install java
+    apt_repository: repo='deb http://ppa.launchpad.net/linuxuprising/java/ubuntu bionic main'
+
+  - name: Add an apt signing key for Docker
+    apt_key:
+      url: https://downloads.apache.org/cassandra/KEYS
+      state: present
+
+  - name: add key for cassandra
+    apt_key:
+      keyserver: pool.sks-keyservers.net
+      id: A278B781FE4B2BDA
+      state: present
+
+  - name: add cassandras's repo
+    apt_repository: repo='deb https://downloads.apache.org/cassandra/debian 311x main'  
+    
+  - name: update cache 
+    apt: update_cache=yes
+
+  - name: Install java 8
+    apt: name=openjdk-8-jdk state=present allow_unauthenticated=yes
+
+  - name: Install cassandra
+    apt: name=cassandra state=present allow_unauthenticated=yes
+
+  - name: Install cassandra tools
+    apt: name=cassandra-tools state=present allow_unauthenticated=yes
+
+  - name: set cluster name
+    replace:
+      path: /etc/cassandra/cassandra.yaml
+      regexp: '.*(cluster_name:).*'
+      replace: '\1 "Test Cluster"'
+
+  - name: add seed nodes
+    replace:
+      path: /etc/cassandra/cassandra.yaml
+      regexp: '(.*- seeds:).*'
+      replace: '\1 "{{ seeds }}"'
+
+  - name: add listen address
+    replace:
+      path: /etc/cassandra/cassandra.yaml
+      regexp: '.*(listen_address:).*'
+      replace: '\1 "{{ ansible_enp2s0.ipv4.address }}"'
+
+  - name: add rpc address
+    replace:
+      path: /etc/cassandra/cassandra.yaml
+      regexp: '.*(rpc_address:).*'
+      replace: '\1 "{{ ansible_enp2s0.ipv4.address }}"'
+
+  - name: add listen nodes
+    replace:
+      path: /etc/cassandra/cassandra.yaml
+      regexp: '.*(listen_on_broadcast_address:).*'
+      replace: '\1 true'
+
+  - name: Reboot server/s
+    shell: service cassandra restart
+    async: 1
+    poll: 0
+    ignore_errors: true
+
